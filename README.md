@@ -1,57 +1,52 @@
-# VueWork — Team Tasks & Scheduling App
+# Random Character AI — Name & Personality Generator
 
-## Problem
-Small teams often struggle to manage projects and tasks efficiently. Without a centralized system, tasks get lost, progress is hard to track, and collaboration suffers.
+## Project Overview
+Random Character AI is a web application that generates unique fictional characters with a name, hobby, quirky fact, and mini description. Users can interact with the character via chat, and the character can respond in voice using text-to-speech. The app combines API data fetching, randomness, and AI-powered conversational interaction to create a fun and interactive experience.
+
+---
 
 ## Target Users
-- Small teams in companies or startups  
-- Project managers who need to assign and track tasks  
-- Team members who need visibility on their tasks and deadlines  
+- College students and hobbyists who enjoy interactive AI experiences.  
+- Writers or game designers looking for creative character ideas.  
+- Anyone curious about quirky fictional characters and AI chat interaction.
+
+---
 
 ## Success Criteria
-- Users can create projects and tasks  
-- Tasks can be assigned, tracked, and moved across a Kanban board  
-- Users can comment on tasks  
-- Calendar view shows tasks by due dates  
-- Admins can manage users and roles  
+- Generates a random character with name, hobby, quirky fact, and description.  
+- Character can respond to user input in a chat interface.  
+- Character's responses can be read aloud using text-to-speech.  
+- Fully front-end implementation using free APIs or browser features.  
+- Easy-to-use interface with interactive elements and clear layout.
+
+---
 
 ## User Stories
-1. **As a team member**, I want to view all projects I’m part of, so I can see what I need to work on.  
-2. **As a project manager**, I want to create new projects, so the team has a place to track tasks.  
-3. **As a team member**, I want to add tasks to a project, so I can keep track of my work items.  
-4. **As a project manager**, I want to assign tasks to users, so everyone knows their responsibilities.  
-5. **As a team member**, I want to move tasks across the board (To-Do → In-Progress → Done), so I can track task status.  
-6. **As a team member**, I want to comment on tasks, so I can communicate updates or ask questions.  
-7. **As a team member**, I want to see tasks in a calendar view, so I can plan my work by due dates.  
-8. **As an admin**, I want to manage users and roles, so I can control access and permissions.  
+1. As a user, I can click a button to generate a new random character.  
+2. As a user, I can view the character’s name, age (optional), hobby, quirky fact, and description.  
+3. As a user, I can type a message to the character and receive AI-generated responses.  
+4. As a user, I can listen to the character’s responses via text-to-speech.  
+5. As a user, I can regenerate the character at any time to get a new profile.  
+6. As a user, I can replay the character’s voice output.  
+7. As a developer, I can easily replace or extend the hobby/fact arrays or AI prompts.  
 
-## Non-goals
-- Advanced analytics or charts  
-- Real-time notifications or chat  
-- Integration with external APIs  
-- Full authentication (only placeholder login)  
-- Mobile app design (desktop-first prototype)  
+---
 
-## Low-Fidelity Wireframes
-- **Home Page** – header/nav/footer, welcome text, navigation links  
-- **Projects List** – list of projects with placeholders  
-- **Kanban Board** – columns: To-Do, In-Progress, Done, with example task cards  
-- **Task Detail** – page/modal showing task name, description, comments  
-- **Calendar View** – monthly view with task markers  
+## Non-Goals
+- No backend or database required; all functionality is front-end.  
+- No persistent chat history across sessions.  
+- No advanced AI model training; uses free APIs or predefined prompts.  
+- No complex animations or gamification (beyond simple interactivity).  
+
+---
 
 ## Tech Stack
-- Vue 3 + Vite  
-- Vue Router  
-- Pinia  
-- Axios (placeholder)  
-- ESLint + Prettier  
+- **Frontend:** HTML, CSS, JavaScript  
+- **APIs:** Random User API (for names/pictures), optional Words API (for hobbies/facts)  
+- **AI Interaction:** OpenAI free-tier API (or any free chatbot API)  
+- **Text-to-Speech:** Browser built-in `speechSynthesis` API  
+- **Development Tools:** VS Code, Live Server  
 
-## Base Layout
-- Header / NavBar / Footer components  
-- Responsive shell (desktop-first)  
+---
 
-## Acceptance
-- App runs locally at `http://localhost:5173`  
-- 3+ routes are functional  
-- Pinia store exists  
-- README includes problem, users, success criteria, user stories, non-goals, wireframes  
+## Project Structure (Suggested Skeleton)
