@@ -41,7 +41,7 @@ Random Character AI is a web application that generates unique fictional charact
 ---
 
 ## Tech Stack
-- **Frontend:** HTML, CSS, JavaScript  
+- **Frontend:** vue 
 - **APIs:** Random User API (for names/pictures), optional Words API (for hobbies/facts)  
 - **AI Interaction:** OpenAI free-tier API (or any free chatbot API)  
 - **Text-to-Speech:** Browser built-in `speechSynthesis` API  
@@ -86,3 +86,4 @@ random-character-ai/
 ├─ .prettierrc
 ├─ package.json
 └─ vite.config.js
+
