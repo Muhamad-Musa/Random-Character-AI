@@ -50,3 +50,39 @@ Random Character AI is a web application that generates unique fictional charact
 ---
 
 ## Project Structure (Suggested Skeleton)
+
+random-character-ai/
+│
+├─ public/
+│   └─ favicon.ico
+│
+├─ src/
+│   ├─ assets/
+│   │   └─ images/        # Placeholder images or icons
+│   │
+│   ├─ components/
+│   │   ├─ CharacterCard.vue       # Displays generated character info
+│   │   ├─ ChatBox.vue             # Input/output chat interface
+│   │   ├─ Button.vue              # Reusable buttons
+│   │   └─ VoiceControl.vue        # Button to trigger text-to-speech
+│   │
+│   ├─ views/
+│   │   └─ Home.vue                # Main page combining components
+│   │
+│   ├─ api/
+│   │   ├─ randomUser.js           # Wrapper for Random User API calls
+│   │   └─ aiChat.js               # Wrapper for AI chat API calls
+│   │
+│   ├─ store/
+│   │   └─ characterStore.js       # Pinia store for character & chat state
+│   │
+│   ├─ App.vue
+│   └─ main.js
+│
+├─ tests/                          # Unit tests (optional)
+│   └─ example.spec.js
+│
+├─ .eslintrc.js
+├─ .prettierrc
+├─ package.json
+└─ vite.config.js
