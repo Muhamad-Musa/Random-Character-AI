@@ -1,6 +1,6 @@
 <template>
   <header>
-    <h1>VueWork</h1>
+    <h1>Random Character AI</h1>
   </header>
 </template>
 
@@ -12,8 +12,6 @@ export default {
 
 <style scoped>
 header {
-  background-color: #f5f5f5;
-  padding: 1rem;
-  text-align: center;
+  padding: 0.5rem;
 }
 </style>

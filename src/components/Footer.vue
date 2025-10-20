@@ -1,6 +1,6 @@
 <template>
   <footer>
-    <p>&copy; 2025 VueWork. All rights reserved.</p>
+    <p>&copy; 2025 Random Character AI. All rights reserved.</p>
   </footer>
 </template>
 

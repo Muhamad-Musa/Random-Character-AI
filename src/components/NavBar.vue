@@ -2,9 +2,9 @@
   <nav>
     <ul>
       <li><router-link to="/">Home</router-link></li>
-      <li><router-link to="/projects">Projects</router-link></li>
-      <li><router-link to="/board">Board</router-link></li>
-      <li><router-link to="/calendar">Calendar</router-link></li>
+      <li><router-link to="/characters">Characters</router-link></li>
+      <li><router-link to="/chat">Chat</router-link></li>
+      <li><router-link to="/about">About</router-link></li>
     </ul>
   </nav>
 </template>
@@ -16,10 +16,35 @@ export default {
 </script>
 
 <style scoped>
+nav {
+  background-color: #4CAF50;
+  padding: 1rem;
+}
+
 nav ul {
   display: flex;
-  gap: 1rem;
+  gap: 2rem;
   list-style: none;
   padding: 0;
+  max-width: 1200px;
+  margin: 0 auto;
+  justify-content: center;
+}
+
+nav a {
+  color: white;
+  text-decoration: none;
+  font-weight: bold;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  transition: background-color 0.3s;
+}
+
+nav a:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+nav a.router-link-active {
+  background-color: rgba(255, 255, 255, 0.2);
 }
 </style>
