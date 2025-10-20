@@ -1,134 +1,118 @@
 <template>
-  <div class="flex flex-col h-screen bg-gray-50 dark:bg-gray-900">
-    <!-- Header -->
-    <header class="bg-white dark:bg-gray-800 shadow-sm p-4 flex items-center justify-between">
-      <div class="flex items-center gap-2">
-        <img
-          src="/assets/gym-logo.png"
-          alt="Gym Logo"
-          class="w-10 h-10 rounded-full object-cover"
-        />
-        <h1 class="text-xl font-semibold text-gray-800 dark:text-gray-100">Gym Chat Coach</h1>
-      </div>
-      <button
-        @click="toggleDarkMode"
-        class="text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white transition"
-      >
-        <i class="fa-solid" :class="darkMode ? 'fa-sun' : 'fa-moon'"></i>
-      </button>
-    </header>
-
-    <!-- Chat Messages -->
-    <div
-      ref="chatContainer"
-      class="flex-1 overflow-y-auto px-4 py-3 space-y-4 scroll-smooth"
-    >
-      <div
-        v-for="(msg, index) in messages"
-        :key="index"
-        class="flex"
-        :class="msg.isUser ? 'justify-end' : 'justify-start'"
-      >
-        <div
-          class="max-w-[80%] p-3 rounded-2xl shadow-sm"
-          :class="msg.isUser
-            ? 'bg-blue-600 text-white rounded-br-none'
-            : 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-100 rounded-bl-none'"
-        >
-          <p class="whitespace-pre-wrap">{{ msg.text }}</p>
-          <span class="text-xs opacity-70 block mt-1 text-right">
-            {{ formatTime(msg.time) }}
-          </span>
+  <div class="chat-page">
+    <h1>Chat with Your Character</h1>
+    <div class="chat-container">
+      <div class="messages" ref="messagesContainer">
+        <div v-for="(message, index) in messages" :key="index" 
+             :class="['message', message.type]">
+          {{ message.text }}
         </div>
       </div>
-    </div>
-
-    <!-- Input Box -->
-    <form @submit.prevent="sendMessage" class="p-4 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
-      <div class="flex items-center gap-3">
-        <input
-          v-model="newMessage"
-          type="text"
-          placeholder="Type your message..."
-          class="flex-1 p-3 rounded-full border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-        />
-        <button
-          type="submit"
-          class="bg-blue-600 hover:bg-blue-700 text-white rounded-full p-3 transition"
-        >
-          <i class="fa-solid fa-paper-plane"></i>
+      <div class="input-area">
+        <input v-model="newMessage" 
+               @keyup.enter="sendMessage" 
+               placeholder="Type your message..." />
+        <button @click="sendMessage">Send</button>
+        <button @click="playVoice" class="voice-btn">
+          Play Voice Response
         </button>
       </div>
-    </form>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from "vue";
+import { ref } from 'vue'
 
 const messages = ref([
-  { text: "Welcome to Gym Chat! 💪", isUser: false, time: new Date() },
-]);
+  { text: 'Hello! I\'m your character. What would you like to talk about?', type: 'character' }
+])
+const newMessage = ref('')
 
-const newMessage = ref("");
-const chatContainer = ref(null);
-const darkMode = ref(false);
-
-const sendMessage = () => {
-  if (newMessage.value.trim() === "") return;
-
-  messages.value.push({
-    text: newMessage.value,
-    isUser: true,
-    time: new Date(),
-  });
-
-  // Simulated bot response
+function sendMessage() {
+  if (!newMessage.value.trim()) return
+  
+  messages.value.push({ text: newMessage.value, type: 'user' })
+  newMessage.value = ''
+  
+  // Simulate character response
   setTimeout(() => {
-    messages.value.push({
-      text: "Got it! I’ll help you with your fitness goals. 🏋️‍♂️",
-      isUser: false,
-      time: new Date(),
-    });
-  }, 700);
+    messages.value.push({ 
+      text: 'That\'s interesting! Tell me more about that...', 
+      type: 'character' 
+    })
+  }, 1000)
+}
 
-  newMessage.value = "";
-};
-
-watch(messages, () => {
-  nextTick(() => {
-    chatContainer.value.scrollTop = chatContainer.value.scrollHeight;
-  });
-});
-
-const formatTime = (time) => {
-  const date = new Date(time);
-  return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-};
-
-const toggleDarkMode = () => {
-  darkMode.value = !darkMode.value;
-  document.documentElement.classList.toggle("dark", darkMode.value);
-};
-
-onMounted(() => {
-  if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
-    darkMode.value = true;
-    document.documentElement.classList.add("dark");
-  }
-});
+function playVoice() {
+  const utterance = new SpeechSynthesisUtterance(
+    messages.value[messages.value.length - 1].text
+  )
+  speechSynthesis.speak(utterance)
+}
 </script>
 
 <style scoped>
-/* Scrollbar styling */
-::-webkit-scrollbar {
-  width: 6px;
+.chat-page {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem;
 }
-::-webkit-scrollbar-thumb {
-  background: #888;
-  border-radius: 10px;
+
+.chat-container {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  padding: 1rem;
+  margin-top: 2rem;
 }
-::-webkit-scrollbar-thumb:hover {
-  background: #555;
+
+.messages {
+  height: 400px;
+  overflow-y: auto;
+  padding: 1rem;
+}
+
+.message {
+  margin: 0.5rem 0;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  max-width: 80%;
+}
+
+.user {
+  background: #e3f2fd;
+  margin-left: auto;
+}
+
+.character {
+  background: #f5f5f5;
+}
+
+.input-area {
+  display: flex;
+  gap: 0.5rem;
+  padding: 1rem;
+  border-top: 1px solid #eee;
+}
+
+input {
+  flex: 1;
+  padding: 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+button {
+  padding: 0.5rem 1rem;
+  background: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.voice-btn {
+  background: #2196F3;
 }
 </style>
