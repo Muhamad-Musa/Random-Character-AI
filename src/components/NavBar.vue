@@ -1,10 +1,8 @@
 <template>
   <nav>
     <ul>
-      <li><router-link to="/">Home</router-link></li>
-      <li><router-link to="/characters">Characters</router-link></li>
-      <li><router-link to="/chat">Chat</router-link></li>
-      <li><router-link to="/about">About</router-link></li>
+  <li><router-link to="/students">Students</router-link></li>
+  <li><router-link to="/add-student">Add Student</router-link></li>
     </ul>
   </nav>
 </template>
