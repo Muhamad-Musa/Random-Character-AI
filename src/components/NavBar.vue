@@ -1,8 +1,11 @@
 <template>
   <nav>
     <ul>
-  <li><router-link to="/students">Students</router-link></li>
-  <li><router-link to="/add-student">Add Student</router-link></li>
+      <li><router-link to="/">Dashboard</router-link></li>
+      <li><router-link to="/students">Students</router-link></li>
+      <li><router-link to="/add-student">Add Student</router-link></li>
+      <li><router-link to="/class">Class Management</router-link></li>
+      <li><router-link to="/attendance">Attendance</router-link></li>
     </ul>
   </nav>
 </template>

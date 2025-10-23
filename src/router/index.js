@@ -1,16 +1,51 @@
-// src/router/index.js
 import { createRouter, createWebHistory } from 'vue-router'
-import Home from '../pages/Home.vue'
+
+// Import all pages
+import Dashboard from '../pages/Dashboard.vue'
 import StudentList from '../pages/StudentList.vue'
 import AddStudent from '../pages/AddStudent.vue'
 import StudentDetails from '../pages/StudentDetails.vue'
-// optionally add assign page later
+import ClassManagement from '../pages/ClassManagement.vue'
+import AssignCourses from '../pages/AssignCourses.vue'
+import AttendanceTracking from '../pages/AttendanceTracking.vue'
 
 const routes = [
-  { path: '/', redirect: '/students' },
-  { path: '/students', component: StudentList },
-  { path: '/add-student', component: AddStudent },
-  { path: '/students/:id', component: StudentDetails, props: true }
+  {
+    path: '/',
+    name: 'Dashboard',
+    component: Dashboard
+  },
+  {
+    path: '/students',
+    name: 'StudentList',
+    component: StudentList
+  },
+  {
+    path: '/add-student',
+    name: 'AddStudent',
+    component: AddStudent
+  },
+  {
+    path: '/student/:id',
+    name: 'StudentDetails',
+    component: StudentDetails,
+    props: true
+  },
+  {
+    path: '/class-management',
+    name: 'ClassManagement',
+    component: ClassManagement
+  },
+  {
+    path: '/assign-courses',
+    name: 'AssignCourses',
+    component: AssignCourses
+  },
+  {
+    path: '/attendance',
+    name: 'AttendanceTracking',
+    component: AttendanceTracking
+  },
 ]
 
 const router = createRouter({
