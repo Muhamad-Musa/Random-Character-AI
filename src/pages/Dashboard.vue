@@ -2,70 +2,96 @@
   <div class="dashboard">
     <h1>📊 Dashboard</h1>
 
+    <!-- Loading State -->
+    <div v-if="isLoading" class="loading">
+      <p>📡 Loading data from Firebase...</p>
+    </div>
+
     <!-- Overview Stats -->
-    <div class="stats">
+    <div v-else class="stats">
       <div class="stat-card">
         <h3>Total Students</h3>
         <p class="stat-number">{{ totalStudents }}</p>
       </div>
 
       <div class="stat-card">
-        <h3>Total Classes</h3>
-        <p class="stat-number">{{ totalClasses }}</p>
+        <h3>Total Stages</h3>
+        <p class="stat-number">{{ totalStages }}</p>
       </div>
     </div>
 
     <!-- Recent Students -->
     <div class="recent">
       <h2>🧑‍🎓 Recent Students</h2>
-      <div v-if="recentStudents.length > 0">
+      <div v-if="!isLoading && recentStudents.length > 0">
         <table class="recent-table">
           <thead>
             <tr>
               <th>Name</th>
-              <th>Class</th>
+              <th>Stage</th>
             </tr>
           </thead>
           <tbody>
             <tr v-for="student in recentStudents" :key="student.id">
               <td>{{ student.name }}</td>
-              <td>{{ className(student.class_id) }}</td>
+              <td>{{ className(student.stage_id) }}</td>
             </tr>
           </tbody>
         </table>
       </div>
-      <div v-else>No students yet</div>
+      <div v-else-if="!isLoading">No students yet</div>
+      <div v-else>Loading students...</div>
     </div>
 
     <!-- Navigation Buttons -->
     <div class="nav-buttons">
       <router-link to="/students" class="nav-btn">👥 View All Students</router-link>
       <router-link to="/add-student" class="nav-btn">➕ Add Student</router-link>
-      <router-link to="/class-management" class="nav-btn">🏫 Manage Classes</router-link>
-      <router-link to="/assign-courses" class="nav-btn">📘 Assign Courses</router-link>
+      <router-link to="/class-management" class="nav-btn">🏫 Manage Stages</router-link>
+      <router-link to="/manage-courses" class="nav-btn">📘 Manage Courses</router-link>
+      <router-link to="/assign-courses" class="nav-btn">✏️ Assign Courses</router-link>
       <router-link to="/attendance" class="nav-btn">📅 Attendance</router-link>
     </div>
   </div>
 </template>
 
 <script setup>
-import { computed } from "vue";
+import { computed, onMounted, ref } from "vue";
 import { useStudentStore } from "../stores/studentStore";
+import { useNotification } from "../composables/useNotification";
 
 const store = useStudentStore();
+const { error: notifyError } = useNotification();
+const isLoading = ref(false);
 
 // Computed properties
 const totalStudents = computed(() => store.totalStudents);
-const totalClasses = computed(() => store.totalClasses);
+const totalStages = computed(() => store.totalStages);
 const recentStudents = computed(() => {
   // Get last 5 students (most recent first)
   return store.students.slice(-5).reverse();
 });
 
-function className(classId) {
-  const c = store.getClassById(classId);
-  return c ? c.name : "—";
+function className(stageId) {
+  const s = store.getStageById(stageId);
+  return s ? s.name : "—";
 }
+
+// Load data from Firebase on mount
+onMounted(async () => {
+  isLoading.value = true;
+  try {
+    await Promise.all([
+      store.fetchAllStudents(),
+      store.fetchAllStages(),
+      store.fetchAllCourses(),
+    ]);
+  } catch (err) {
+    notifyError("Failed to load dashboard data: " + err.message);
+  } finally {
+    isLoading.value = false;
+  }
+});
 </script>
 
 <style scoped>
@@ -78,6 +104,13 @@ function className(classId) {
 h1 {
   margin-bottom: 1.5rem;
   color: #2c3e50;
+}
+
+.loading {
+  text-align: center;
+  padding: 40px 20px;
+  color: #666;
+  font-size: 1.1rem;
 }
 
 .stats {

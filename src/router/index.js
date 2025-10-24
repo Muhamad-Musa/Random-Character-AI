@@ -6,6 +6,7 @@ import StudentList from '../pages/StudentList.vue'
 import AddStudent from '../pages/AddStudent.vue'
 import StudentDetails from '../pages/StudentDetails.vue'
 import ClassManagement from '../pages/ClassManagement.vue'
+import ManageCourses from '../pages/ManageCourses.vue'
 import AssignCourses from '../pages/AssignCourses.vue'
 import AttendanceTracking from '../pages/AttendanceTracking.vue'
 
@@ -35,6 +36,11 @@ const routes = [
     path: '/class-management',
     name: 'ClassManagement',
     component: ClassManagement
+  },
+  {
+    path: '/manage-courses',
+    name: 'ManageCourses',
+    component: ManageCourses
   },
   {
     path: '/assign-courses',

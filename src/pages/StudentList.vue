@@ -11,14 +11,14 @@
       <thead>
         <tr>
           <th>Name</th>
-          <th>Class</th>
+          <th>Stage</th>
           <th>Actions</th>
         </tr>
       </thead>
       <tbody>
         <tr v-for="s in paginated" :key="s.id">
           <td>{{ s.name }}</td>
-          <td>{{ className(s.class_id) }}</td>
+          <td>{{ className(s.stage_id) }}</td>
           <td class="actions">
             <router-link :to="`/student/${s.id}`" class="btn">View</router-link>
             <button class="btn danger" @click="confirmDelete(s.id)">Delete</button>
@@ -63,9 +63,9 @@ const paginated = computed(() => {
   return filtered.value.slice(start, start + pageSize)
 })
 
-function className(classId) {
-  const c = store.getClassById(classId)
-  return c ? c.name : '—'
+function className(stageId) {
+  const s = store.getStageById(stageId)
+  return s ? s.name : '—'
 }
 
 function confirmDelete(id) {

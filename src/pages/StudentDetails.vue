@@ -6,7 +6,7 @@
       <div class="row"><strong>Name:</strong> <span>{{ student.name }}</span></div>
       <div class="row"><strong>Age:</strong> <span>{{ student.age ?? '—' }}</span></div>
       <div class="row"><strong>Email:</strong> <span>{{ student.email }}</span></div>
-      <div class="row"><strong>Class:</strong> <span>{{ className(student.class_id) }}</span></div>
+      <div class="row"><strong>Stage:</strong> <span>{{ className(student.stage_id) }}</span></div>
       <div class="row">
         <strong>Assigned Courses:</strong>
         <div v-if="studentCourses.length">
@@ -47,9 +47,9 @@ const studentCourses = computed(() => {
   return store.getStudentCourses(student.id)
 })
 
-function className(classId) {
-  const c = store.getClassById(classId)
-  return c ? c.name : '—'
+function className(stageId) {
+  const s = store.getStageById(stageId)
+  return s ? s.name : '—'
 }
 
 function deleteStudent() {

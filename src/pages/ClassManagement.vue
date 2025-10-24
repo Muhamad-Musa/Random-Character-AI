@@ -1,42 +1,45 @@
 <template>
-  <div class="class-management">
-    <h1>🏫 Class Management</h1>
+  <div class="stage-management">
+    <h1>🏫 Manage Stages</h1>
 
-    <!-- Add New Class -->
-    <form @submit.prevent="addClass" class="add-class-form">
+    <!-- Add New Stage -->
+    <form @submit.prevent="addStage" class="add-stage-form">
       <input
-        v-model="newClassName"
-        placeholder="Enter class name"
+        v-model="newStageName"
+        placeholder="Enter stage name (e.g., Stage 1, Stage 4A)"
         required
       />
-      <button type="submit">Add Class</button>
+      <button type="submit" :disabled="store.loading">
+        {{ store.loading ? "Adding..." : "Add Stage" }}
+      </button>
     </form>
 
-    <!-- Class List -->
-    <div class="class-list">
-      <h2>📚 Available Classes</h2>
-      <div v-if="store.classes.length > 0">
+    <!-- Stage List -->
+    <div class="stage-list">
+      <h2>📚 Available Stages</h2>
+      <div v-if="store.loading" class="loading">Loading stages...</div>
+      <div v-else-if="store.stages.length > 0">
         <ul>
           <li
-            v-for="classItem in store.classes"
-            :key="classItem.id"
-            @click="selectClass(classItem.id)"
-            :class="{ active: selectedClassId === classItem.id }"
+            v-for="stageItem in store.stages"
+            :key="stageItem.id"
+            @click="selectStage(stageItem.id)"
+            :class="{ active: selectedStageId === stageItem.id }"
           >
-            {{ classItem.name }}
+            {{ stageItem.name }}
           </li>
         </ul>
       </div>
-      <div v-else>No classes yet</div>
+      <div v-else>No stages yet</div>
     </div>
 
-    <!-- Students in Selected Class -->
-    <div v-if="selectedClassId" class="students-list">
-      <h3>👨‍🎓 Students in {{ selectedClassName }}</h3>
-      <div v-if="studentsInSelectedClass.length > 0">
+    <!-- Students in Selected Stage -->
+    <div v-if="selectedStageId" class="students-list">
+      <h3>👨‍🎓 Students in {{ selectedStageName }}</h3>
+      <div v-if="studentsInSelectedStage.length > 0">
         <ul>
           <li
-            v-for="student in studentsInSelectedClass"
+            v-for="student in studentsInSelectedStage"
             :key="student.id"
           >
             {{ student.name }} (Age: {{ student.age }})
@@ -44,64 +47,77 @@
         </ul>
       </div>
       <p v-else class="empty-msg">
-        No students assigned to this class yet.
+        No students assigned to this stage yet.
       </p>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from "vue";
+import { ref, computed, onMounted } from "vue";
 import { useStudentStore } from "../stores/studentStore";
 
 const store = useStudentStore();
-const newClassName = ref("");
-const selectedClassId = ref(null);
+const newStageName = ref("");
+const selectedStageId = ref(null);
 
-// add class function
-function addClass() {
-  if (newClassName.value.trim() === "") return;
-  store.addClass(newClassName.value.trim());
-  newClassName.value = "";
-}
-
-// Get the name of selected class
-const selectedClassName = computed(() => {
-  const classItem = store.classes.find((c) => c.id === selectedClassId.value);
-  return classItem ? classItem.name : "";
+// Load stages on mount
+onMounted(async () => {
+  try {
+    await store.fetchAllStages();
+  } catch (err) {
+    console.error("Failed to load stages");
+  }
 });
 
-// computed: students of selected class
-const studentsInSelectedClass = computed(() =>
-  store.getStudentsByClass(selectedClassId.value)
+// Add stage function
+async function addStage() {
+  if (newStageName.value.trim() === "") return;
+  try {
+    await store.addStage(newStageName.value.trim());
+    newStageName.value = "";
+  } catch (err) {
+    console.error("Failed to add stage");
+  }
+}
+
+// Get the name of selected stage
+const selectedStageName = computed(() => {
+  const stageItem = store.stages.find((s) => s.id === selectedStageId.value);
+  return stageItem ? stageItem.name : "";
+});
+
+// computed: students of selected stage
+const studentsInSelectedStage = computed(() =>
+  store.getStudentsByStage(selectedStageId.value)
 );
 
-function selectClass(classId) {
-  selectedClassId.value = classId;
+function selectStage(stageId) {
+  selectedStageId.value = stageId;
 }
 </script>
 
 <style scoped>
-.class-management {
+.stage-management {
   padding: 20px;
   max-width: 800px;
   margin: auto;
 }
 
-.add-class-form {
+.add-stage-form {
   display: flex;
   gap: 10px;
   margin-bottom: 20px;
 }
 
-.add-class-form input {
+.add-stage-form input {
   flex: 1;
   padding: 8px;
   border: 1px solid #ccc;
   border-radius: 6px;
 }
 
-.add-class-form button {
+.add-stage-form button {
   background-color: #2f80ed;
   color: white;
   border: none;
@@ -111,16 +127,27 @@ function selectClass(classId) {
   transition: 0.3s;
 }
 
-.add-class-form button:hover {
+.add-stage-form button:hover:not(:disabled) {
   background-color: #2563be;
 }
 
-.class-list ul {
+.add-stage-form button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.loading {
+  color: #666;
+  padding: 1rem;
+  text-align: center;
+}
+
+.stage-list ul {
   list-style: none;
   padding: 0;
 }
 
-.class-list li {
+.stage-list li {
   background: #f8f9fa;
   margin-bottom: 8px;
   padding: 10px;
@@ -129,11 +156,11 @@ function selectClass(classId) {
   transition: 0.3s;
 }
 
-.class-list li:hover {
+.stage-list li:hover {
   background: #e2e6ea;
 }
 
-.class-list li.active {
+.stage-list li.active {
   background: #2f80ed;
   color: white;
 }
