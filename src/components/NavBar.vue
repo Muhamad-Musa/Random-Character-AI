@@ -4,7 +4,8 @@
       <li><router-link to="/">Dashboard</router-link></li>
       <li><router-link to="/students">Students</router-link></li>
       <li><router-link to="/add-student">Add Student</router-link></li>
-      <li><router-link to="/class">Class Management</router-link></li>
+      <li><router-link to="/class-management">Classes</router-link></li>
+      <li><router-link to="/assign-courses">Assign Courses</router-link></li>
       <li><router-link to="/attendance">Attendance</router-link></li>
     </ul>
   </nav>
@@ -18,18 +19,19 @@ export default {
 
 <style scoped>
 nav {
-  background-color: #4CAF50;
+  background-color: #2c3e50;
   padding: 1rem;
 }
 
 nav ul {
   display: flex;
-  gap: 2rem;
+  gap: 1rem;
   list-style: none;
   padding: 0;
   max-width: 1200px;
   margin: 0 auto;
   justify-content: center;
+  flex-wrap: wrap;
 }
 
 nav a {
@@ -46,6 +48,6 @@ nav a:hover {
 }
 
 nav a.router-link-active {
-  background-color: rgba(255, 255, 255, 0.2);
+  background-color: #0078d4;
 }
 </style>

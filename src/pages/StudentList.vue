@@ -1,10 +1,9 @@
-<!-- src/pages/StudentList.vue -->
 <template>
   <div class="page">
     <h1>Student List</h1>
 
     <div class="controls">
-      <input v-model="query" placeholder="Search by name or email..." />
+      <input v-model="query" placeholder="Search by name..." />
       <router-link class="btn primary" to="/add-student">+ Add Student</router-link>
     </div>
 
@@ -12,20 +11,16 @@
       <thead>
         <tr>
           <th>Name</th>
-          <th>Age</th>
           <th>Class</th>
-          <th>Email</th>
           <th>Actions</th>
         </tr>
       </thead>
       <tbody>
         <tr v-for="s in paginated" :key="s.id">
           <td>{{ s.name }}</td>
-          <td>{{ s.age }}</td>
-          <td>{{ className(s.classId) }}</td>
-          <td>{{ s.email }}</td>
+          <td>{{ className(s.class_id) }}</td>
           <td class="actions">
-            <router-link :to="`/students/${s.id}`" class="btn">View</router-link>
+            <router-link :to="`/student/${s.id}`" class="btn">View</router-link>
             <button class="btn danger" @click="confirmDelete(s.id)">Delete</button>
           </td>
         </tr>
@@ -57,9 +52,7 @@ const filtered = computed(() => {
   const q = query.value.trim().toLowerCase()
   if (!q) return store.students
   return store.students.filter(
-    (s) =>
-      (s.name && s.name.toLowerCase().includes(q)) ||
-      (s.email && s.email.toLowerCase().includes(q))
+    (s) => s.name && s.name.toLowerCase().includes(q)
   )
 })
 
@@ -71,12 +64,12 @@ const paginated = computed(() => {
 })
 
 function className(classId) {
-  const c = store.classes.find((x) => x.id === classId)
+  const c = store.getClassById(classId)
   return c ? c.name : '—'
 }
 
 function confirmDelete(id) {
-  if (confirm('Delete this student? This cannot be undone.')) {
+  if (confirm('Are you sure? This cannot be undone.')) {
     store.deleteStudent(id)
     // adjust page if necessary
     if ((page.value - 1) * pageSize >= filtered.value.length && page.value > 1) {

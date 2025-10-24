@@ -1,6 +1,7 @@
 {
-  "name": "random-character-ai",
+  "name": "student-management-system",
   "version": "1.0.0",
+  "description": "A student management system with courses and attendance tracking",
   "private": true,
   "scripts": {
     "dev": "vite",

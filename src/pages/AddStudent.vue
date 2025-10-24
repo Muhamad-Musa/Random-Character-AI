@@ -1,4 +1,3 @@
-<!-- src/pages/AddStudent.vue -->
 <template>
   <div class="page">
     <h1>Add Student</h1>
@@ -6,36 +5,27 @@
     <form @submit.prevent="onSubmit" @reset.prevent="onReset" class="form">
       <label>
         Name *
-        <input v-model="form.name" type="text" />
+        <input v-model="form.name" type="text" required />
         <small v-if="errors.name" class="error">{{ errors.name }}</small>
       </label>
 
       <label>
-        Age
-        <input v-model.number="form.age" type="number" min="1" />
+        Age *
+        <input v-model.number="form.age" type="number" min="1" required />
       </label>
 
       <label>
-        Class
-        <select v-model.number="form.classId">
+        Class *
+        <select v-model.number="form.class_id" required>
           <option :value="null">-- Select class --</option>
-          <option v-for="c in classes" :key="c.id" :value="c.id">{{ c.name }}</option>
+          <option v-for="c in store.classes" :key="c.id" :value="c.id">{{ c.name }}</option>
         </select>
       </label>
 
       <label>
         Email *
-        <input v-model="form.email" type="email" />
+        <input v-model="form.email" type="email" required />
         <small v-if="errors.email" class="error">{{ errors.email }}</small>
-      </label>
-
-      <label>
-        Courses (optional)
-        <div class="courses-list">
-          <label v-for="c in courses" :key="c.id">
-            <input type="checkbox" :value="c.id" v-model="form.courses" /> {{ c.name }}
-          </label>
-        </div>
       </label>
 
       <div class="form-actions">
@@ -45,28 +35,27 @@
       </div>
     </form>
 
-    <div v-if="saved" class="notice">Student created: {{ createdName }} — <router-link :to="`/students/${createdId}`">View</router-link></div>
+    <div v-if="saved" class="notice success">✅ Student created: {{ createdName }} — <router-link :to="`/student/${createdId}`">View</router-link></div>
+    <div v-if="errorMessage" class="notice error">❌ {{ errorMessage }}</div>
   </div>
 </template>
 
 <script setup>
 import { reactive, ref } from 'vue'
 import { useStudentStore } from '../stores/studentStore'
-import { useRouter } from 'vue-router'
 
 const store = useStudentStore()
-const router = useRouter()
 
 const form = reactive({
   name: '',
   age: null,
-  classId: null,
+  class_id: null,
   email: '',
-  courses: []
 })
 
 const errors = reactive({ name: '', email: '' })
 const saved = ref(false)
+const errorMessage = ref('')
 const createdId = ref(null)
 const createdName = ref('')
 
@@ -89,52 +78,58 @@ function validate() {
       ok = false
     }
   }
+  if (!form.age) {
+    errors.age = 'Age is required'
+    ok = false
+  }
   return ok
 }
 
 function onSubmit() {
+  errorMessage.value = ''
   if (!validate()) return
-  const student = store.addStudent({
-    name: form.name.trim(),
-    age: form.age ? Number(form.age) : null,
-    classId: form.classId || null,
-    email: form.email.trim(),
-    courses: form.courses || []
-  })
-  saved.value = true
-  createdId.value = student.id
-  createdName.value = student.name
-  // reset form
-  form.name = ''
-  form.age = null
-  form.classId = null
-  form.email = ''
-  form.courses = []
-  // Option: navigate to details page automatically
-  // router.push(`/students/${createdId.value}`)
+  try {
+    const student = store.addStudent({
+      name: form.name.trim(),
+      age: Number(form.age),
+      class_id: form.class_id,
+      email: form.email.trim(),
+    })
+    saved.value = true
+    createdId.value = student.id
+    createdName.value = student.name
+    // reset form
+    form.name = ''
+    form.age = null
+    form.class_id = null
+    form.email = ''
+  } catch (err) {
+    errorMessage.value = 'Failed to create student'
+  }
 }
 
 function onReset() {
   form.name = ''
   form.age = null
-  form.classId = null
+  form.class_id = null
   form.email = ''
-  form.courses = []
   errors.name = ''
   errors.email = ''
   saved.value = false
+  errorMessage.value = ''
 }
 </script>
 
 <style scoped>
 .page { max-width:700px; margin:1.2rem auto; padding:0 1rem; }
 .form { display:flex; flex-direction:column; gap:0.6rem; }
-label { display:flex; flex-direction:column; font-size:0.95rem; }
-input[type="text"], input[type="email"], input[type="number"], select { padding:0.45rem; border:1px solid #ddd; border-radius:4px; }
-.courses-list { display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:0.4rem; }
+label { display:flex; flex-direction:column; font-size:0.95rem; font-weight: bold; }
+input[type="text"], input[type="email"], input[type="number"], select { padding:0.45rem; border:1px solid #ddd; border-radius:4px; margin-top: 0.2rem; }
 .form-actions { display:flex; gap:0.6rem; margin-top:0.6rem; }
-.error { color:#c0392b; font-size:0.85rem; }
-.notice { margin-top:0.8rem; padding:0.6rem; background:#ecf9f1; border:1px solid #bfe9cf; border-radius:4px; }
+.error { color:#c0392b; font-size:0.85rem; margin-top: 0.2rem; }
+.notice { margin-top:0.8rem; padding:0.6rem; border-radius:4px; }
+.notice.success { background:#ecf9f1; border:1px solid #bfe9cf; color: #27ae60; }
+.notice.error { background:#fdeaea; border:1px solid #f5b7b1; color: #c0392b; }
 .btn { padding:0.45rem 0.7rem; border:1px solid #bbb; background:#f5f5f5; border-radius:4px; cursor:pointer; text-decoration:none; color:#222; }
 .btn.primary { background:#2f80ed; color:white; border-color:#2f80ed; }
 </style>

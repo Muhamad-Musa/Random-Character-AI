@@ -15,31 +15,36 @@
     <!-- Class List -->
     <div class="class-list">
       <h2>📚 Available Classes</h2>
-      <ul>
-        <li
-          v-for="(classItem, index) in classes"
-          :key="index"
-          @click="selectClass(classItem)"
-          :class="{ active: selectedClass === classItem }"
-        >
-          {{ classItem }}
-        </li>
-      </ul>
+      <div v-if="store.classes.length > 0">
+        <ul>
+          <li
+            v-for="classItem in store.classes"
+            :key="classItem.id"
+            @click="selectClass(classItem.id)"
+            :class="{ active: selectedClassId === classItem.id }"
+          >
+            {{ classItem.name }}
+          </li>
+        </ul>
+      </div>
+      <div v-else>No classes yet</div>
     </div>
 
     <!-- Students in Selected Class -->
-    <div v-if="selectedClass" class="students-list">
-      <h3>👨‍🎓 Students in {{ selectedClass }}</h3>
-      <ul>
-        <li
-          v-for="student in studentsInSelectedClass"
-          :key="student.id"
-        >
-          {{ student.name }} (Age: {{ student.age }})
-        </li>
-      </ul>
-      <p v-if="studentsInSelectedClass.length === 0" class="empty-msg">
-        No students assigned yet.
+    <div v-if="selectedClassId" class="students-list">
+      <h3>👨‍🎓 Students in {{ selectedClassName }}</h3>
+      <div v-if="studentsInSelectedClass.length > 0">
+        <ul>
+          <li
+            v-for="student in studentsInSelectedClass"
+            :key="student.id"
+          >
+            {{ student.name }} (Age: {{ student.age }})
+          </li>
+        </ul>
+      </div>
+      <p v-else class="empty-msg">
+        No students assigned to this class yet.
       </p>
     </div>
   </div>
@@ -51,26 +56,28 @@ import { useStudentStore } from "../stores/studentStore";
 
 const store = useStudentStore();
 const newClassName = ref("");
-const selectedClass = ref(null);
-
-// reactive list of classes from store
-const classes = computed(() => store.classes);
+const selectedClassId = ref(null);
 
 // add class function
 function addClass() {
   if (newClassName.value.trim() === "") return;
-
   store.addClass(newClassName.value.trim());
   newClassName.value = "";
 }
 
+// Get the name of selected class
+const selectedClassName = computed(() => {
+  const classItem = store.classes.find((c) => c.id === selectedClassId.value);
+  return classItem ? classItem.name : "";
+});
+
 // computed: students of selected class
 const studentsInSelectedClass = computed(() =>
-  store.students.filter((s) => s.class === selectedClass.value)
+  store.getStudentsByClass(selectedClassId.value)
 );
 
-function selectClass(classItem) {
-  selectedClass.value = classItem;
+function selectClass(classId) {
+  selectedClassId.value = classId;
 }
 </script>
 
@@ -95,7 +102,7 @@ function selectClass(classItem) {
 }
 
 .add-class-form button {
-  background-color: #0078d4;
+  background-color: #2f80ed;
   color: white;
   border: none;
   padding: 8px 14px;
@@ -105,7 +112,7 @@ function selectClass(classItem) {
 }
 
 .add-class-form button:hover {
-  background-color: #005fa3;
+  background-color: #2563be;
 }
 
 .class-list ul {
@@ -127,7 +134,7 @@ function selectClass(classItem) {
 }
 
 .class-list li.active {
-  background: #0078d4;
+  background: #2f80ed;
   color: white;
 }
 
@@ -136,6 +143,19 @@ function selectClass(classItem) {
   background: #f8f9fa;
   padding: 15px;
   border-radius: 8px;
+}
+
+.students-list ul {
+  list-style: none;
+  padding: 0;
+}
+
+.students-list li {
+  background: white;
+  padding: 8px;
+  margin-bottom: 6px;
+  border-radius: 4px;
+  border-left: 3px solid #2f80ed;
 }
 
 .empty-msg {

@@ -1,6 +1,6 @@
 <template>
   <footer>
-    <p>&copy; 2025 Random Character AI. All rights reserved.</p>
+    <p>&copy; 2025 Student Management System. All rights reserved.</p>
   </footer>
 </template>
 
@@ -12,7 +12,8 @@ export default {
 
 <style scoped>
 footer {
-  background-color: #f5f5f5;
+  background-color: #2c3e50;
+  color: white;
   padding: 1rem;
   text-align: center;
   margin-top: 2rem;
