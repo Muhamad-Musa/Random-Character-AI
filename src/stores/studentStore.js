@@ -3,6 +3,8 @@ import { ref, computed } from "vue";
 import { studentService } from "../services/studentService";
 import { stageService } from "../services/stageService";
 import { courseService } from "../services/courseService";
+import { enrollmentService } from "../services/enrollmentService";
+import { marksService } from "../services/marksService";
 import { attendanceService } from "../services/attendanceService";
 
 export const useStudentStore = defineStore("student", () => {
@@ -10,7 +12,9 @@ export const useStudentStore = defineStore("student", () => {
   const students = ref([]);
   const stages = ref([]);
   const courses = ref([]);
-  const attendance = ref([]);
+  const studentEnrollments = ref({}); // { studentId: [enrollments...] }
+  const enrollmentMarks = ref({}); // { studentId_enrollmentId: [marks...] }
+  const enrollmentAttendance = ref({}); // { studentId_enrollmentId: [attendance...] }
   const loading = ref(false);
   const error = ref(null);
 
@@ -141,11 +145,9 @@ export const useStudentStore = defineStore("student", () => {
   };
 
   const getStudentCourses = (studentId) => {
-    const student = getStudentById(studentId);
-    if (!student) return [];
-    return (student.courses || [])
-      .map((courseId) => getCourseById(courseId))
-      .filter((c) => c);
+    // Get enrollments for this student
+    const enrollments = studentEnrollments.value[String(studentId)] || [];
+    return enrollments;
   };
 
   const assignCourses = async (studentId, courseIds) => {
@@ -154,13 +156,28 @@ export const useStudentStore = defineStore("student", () => {
     try {
       const student = getStudentById(studentId);
       if (!student) throw new Error("Student not found");
-      const updatedCourses = Array.from(
-        new Set([...(student.courses || []), ...courseIds])
-      );
-      const updated = await updateStudent(studentId, {
-        courses: updatedCourses,
-      });
-      return updated;
+
+      // Get current enrollments
+      const currentEnrollments = studentEnrollments.value[String(studentId)] || [];
+      const enrolledCourseIds = currentEnrollments.map((e) => e.course_id);
+
+      // Enroll in new courses
+      for (const courseId of courseIds) {
+        if (!enrolledCourseIds.includes(String(courseId))) {
+          const course = getCourseById(courseId);
+          const enrollment = await enrollmentService.enrollStudentInCourse(
+            String(studentId),
+            String(courseId),
+            course?.name || "Unknown Course"
+          );
+          if (!studentEnrollments.value[String(studentId)]) {
+            studentEnrollments.value[String(studentId)] = [];
+          }
+          studentEnrollments.value[String(studentId)].push(enrollment);
+        }
+      }
+
+      return student;
     } catch (err) {
       error.value = err.message;
       throw err;
@@ -198,12 +215,14 @@ export const useStudentStore = defineStore("student", () => {
     }
   };
 
-  // Actions - Attendance
-  const fetchAllAttendance = async () => {
+  // Actions - Enrollments
+  const fetchStudentEnrollments = async (studentId) => {
     loading.value = true;
     error.value = null;
     try {
-      attendance.value = await attendanceService.getAllAttendance();
+      const enrollments = await enrollmentService.getStudentEnrollments(String(studentId));
+      studentEnrollments.value[String(studentId)] = enrollments;
+      return enrollments;
     } catch (err) {
       error.value = err.message;
       throw err;
@@ -212,19 +231,136 @@ export const useStudentStore = defineStore("student", () => {
     }
   };
 
-  const saveAttendanceRecord = async (records) => {
+  const removeEnrollment = async (studentId, enrollmentId) => {
     loading.value = true;
     error.value = null;
     try {
-      const result = await attendanceService.saveAttendance(records);
-      const recordsArray = Array.isArray(result) ? result : [result];
-      attendance.value.push(...recordsArray);
-      return result;
+      await enrollmentService.removeEnrollment(String(studentId), enrollmentId);
+      if (studentEnrollments.value[String(studentId)]) {
+        studentEnrollments.value[String(studentId)] = 
+          studentEnrollments.value[String(studentId)].filter(e => e.id !== enrollmentId);
+      }
     } catch (err) {
       error.value = err.message;
       throw err;
     } finally {
       loading.value = false;
+    }
+  };
+
+  // Actions - Marks
+  const fetchEnrollmentMarks = async (studentId, enrollmentId) => {
+    loading.value = true;
+    error.value = null;
+    try {
+      const key = `${studentId}_${enrollmentId}`;
+      const marks = await marksService.getEnrollmentMarks(String(studentId), enrollmentId);
+      enrollmentMarks.value[key] = marks;
+      return marks;
+    } catch (err) {
+      error.value = err.message;
+      throw err;
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  const addMark = async (studentId, enrollmentId, markData) => {
+    loading.value = true;
+    error.value = null;
+    try {
+      const mark = await marksService.addMark(String(studentId), enrollmentId, markData);
+      const key = `${studentId}_${enrollmentId}`;
+      if (!enrollmentMarks.value[key]) {
+        enrollmentMarks.value[key] = [];
+      }
+      enrollmentMarks.value[key].push(mark);
+      return mark;
+    } catch (err) {
+      error.value = err.message;
+      throw err;
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  const getAverageMarks = async (studentId, enrollmentId) => {
+    try {
+      return await marksService.getAverageMarks(String(studentId), enrollmentId);
+    } catch (err) {
+      error.value = err.message;
+      throw err;
+    }
+  };
+
+  // Actions - Attendance
+  const fetchEnrollmentAttendance = async (studentId, enrollmentId) => {
+    loading.value = true;
+    error.value = null;
+    try {
+      const key = `${studentId}_${enrollmentId}`;
+      const records = await attendanceService.getEnrollmentAttendance(String(studentId), enrollmentId);
+      enrollmentAttendance.value[key] = records;
+      return records;
+    } catch (err) {
+      error.value = err.message;
+      throw err;
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  const recordAttendance = async (studentId, enrollmentId, attendanceData) => {
+    loading.value = true;
+    error.value = null;
+    try {
+      const record = await attendanceService.recordAttendance(
+        String(studentId),
+        enrollmentId,
+        attendanceData
+      );
+      const key = `${studentId}_${enrollmentId}`;
+      if (!enrollmentAttendance.value[key]) {
+        enrollmentAttendance.value[key] = [];
+      }
+      enrollmentAttendance.value[key].push(record);
+      return record;
+    } catch (err) {
+      error.value = err.message;
+      throw err;
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  const recordBulkAttendance = async (attendanceRecords) => {
+    loading.value = true;
+    error.value = null;
+    try {
+      const results = await attendanceService.recordBulkAttendance(attendanceRecords);
+      // Update local state for each record
+      for (const result of results) {
+        const key = `${result.studentId}_${result.enrollmentId}`;
+        if (!enrollmentAttendance.value[key]) {
+          enrollmentAttendance.value[key] = [];
+        }
+        enrollmentAttendance.value[key].push(result);
+      }
+      return results;
+    } catch (err) {
+      error.value = err.message;
+      throw err;
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  const getAttendanceStats = async (studentId, enrollmentId) => {
+    try {
+      return await attendanceService.getAttendanceStats(String(studentId), enrollmentId);
+    } catch (err) {
+      error.value = err.message;
+      throw err;
     }
   };
 
@@ -237,7 +373,9 @@ export const useStudentStore = defineStore("student", () => {
     students,
     stages,
     courses,
-    attendance,
+    studentEnrollments,
+    enrollmentMarks,
+    enrollmentAttendance,
     loading,
     error,
 
@@ -268,8 +406,19 @@ export const useStudentStore = defineStore("student", () => {
     addCourse,
     deleteCourse,
 
+    // Enrollment actions
+    fetchStudentEnrollments,
+    removeEnrollment,
+
+    // Marks actions
+    fetchEnrollmentMarks,
+    addMark,
+    getAverageMarks,
+
     // Attendance actions
-    fetchAllAttendance,
-    saveAttendanceRecord,
+    fetchEnrollmentAttendance,
+    recordAttendance,
+    recordBulkAttendance,
+    getAttendanceStats,
   };
 });

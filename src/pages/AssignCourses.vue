@@ -6,7 +6,7 @@
     <div class="form-group">
       <label for="student">Select Student:</label>
       <select v-model.number="selectedStudentId" id="student">
-        <option :value="null">-- Choose a student --</option>
+        <option value="">-- Choose a student --</option>
         <option
           v-for="student in store.students"
           :key="student.id"
@@ -64,29 +64,51 @@
 </template>
 
 <script setup>
-import { ref, computed } from "vue";
+import { ref, computed, onMounted } from "vue";
 import { useStudentStore } from "../stores/studentStore";
+import { useNotification } from "../composables/useNotification";
 
 const store = useStudentStore();
+const { success: notifySuccess, error: notifyError } = useNotification();
 
-const selectedStudentId = ref(null);
+const selectedStudentId = ref('');
 const selectedCourses = ref([]);
+const isLoading = ref(false);
+
+// Load data on mount
+onMounted(async () => {
+  isLoading.value = true;
+  try {
+    await Promise.all([
+      store.fetchAllStudents(),
+      store.fetchAllCourses(),
+    ]);
+  } catch (err) {
+    notifyError("Failed to load data: " + err.message);
+  } finally {
+    isLoading.value = false;
+  }
+});
 
 const selectedStudent = computed(() =>
   store.getStudentById(selectedStudentId.value)
 );
 
 const assignedCourses = computed(() => {
-  if (!selectedStudent.value) return [];
-  return store.getStudentCourses(selectedStudent.value.id);
+  if (!selectedStudentId.value) return [];
+  return store.getStudentCourses(selectedStudentId.value);
 });
 
-function assignCourses() {
-  if (!selectedStudentId.value || selectedCourses.length === 0) return;
+async function assignCourses() {
+  if (!selectedStudentId.value || selectedCourses.value.length === 0) return;
 
-  store.assignCourses(selectedStudentId.value, selectedCourses.value);
-  selectedCourses.value = [];
-  alert("✅ Courses assigned successfully!");
+  try {
+    await store.assignCourses(selectedStudentId.value, selectedCourses.value);
+    notifySuccess("✅ Courses assigned successfully!");
+    selectedCourses.value = [];
+  } catch (err) {
+    notifyError("Failed to assign courses: " + err.message);
+  }
 }
 </script>
 

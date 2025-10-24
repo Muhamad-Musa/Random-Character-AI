@@ -2,11 +2,16 @@
   <div class="attendance-page">
     <h1>📅 Attendance Tracking</h1>
 
+    <!-- Loading State -->
+    <div v-if="isLoading" class="loading">
+      <p>📡 Loading data...</p>
+    </div>
+
     <!-- Select course -->
-    <div class="form-group">
+    <div v-if="!isLoading" class="form-group">
       <label for="course">Select Course:</label>
-      <select v-model.number="selectedCourseId" id="course">
-        <option :value="null">-- Choose a course --</option>
+      <select v-model.number="selectedCourseId" id="course" @change="handleCourseChange">
+        <option value="">-- Choose a course --</option>
         <option
           v-for="course in store.courses"
           :key="course.id"
@@ -17,58 +22,75 @@
       </select>
     </div>
 
-    <!-- Select date -->
-    <div class="form-group">
-      <label for="date">Select Date:</label>
-      <input type="date" v-model="selectedDate" id="date" />
+    <!-- Show students enrolled in course -->
+    <div v-if="selectedCourseId && studentsInCourse.length > 0" class="course-students">
+      <h2>👥 Students Enrolled: {{ studentsInCourse.length }}</h2>
+      
+      <!-- Select date -->
+      <div class="form-group">
+        <label for="date">Select Date:</label>
+        <input type="date" v-model="selectedDate" id="date" />
+      </div>
+
+      <!-- Attendance Table -->
+      <div v-if="selectedDate" class="attendance-table-container">
+        <table class="attendance-table">
+          <thead>
+            <tr>
+              <th>Student Name</th>
+              <th>Stage</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="item in attendanceData" :key="item.studentId">
+              <td>{{ item.studentName }}</td>
+              <td>{{ item.stageName }}</td>
+              <td>
+                <div class="status-buttons">
+                  <button
+                    @click="setStatus(item.studentId, 'Present')"
+                    :class="['status-btn', 'present', { active: item.status === 'Present' }]"
+                  >
+                    ✓ Present
+                  </button>
+                  <button
+                    @click="setStatus(item.studentId, 'Absent')"
+                    :class="['status-btn', 'absent', { active: item.status === 'Absent' }]"
+                  >
+                    ✗ Absent
+                  </button>
+                  <button
+                    @click="setStatus(item.studentId, 'Late')"
+                    :class="['status-btn', 'late', { active: item.status === 'Late' }]"
+                  >
+                    ⏰ Late
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <!-- Action Buttons -->
+        <div class="action-buttons">
+          <button @click="markAllPresent" class="btn mark-all">Mark All Present</button>
+          <button @click="saveAttendance" class="btn save-btn" :disabled="!hasAnyStatus">
+            💾 Save Attendance
+          </button>
+        </div>
+      </div>
     </div>
 
-    <!-- Load button -->
-    <button
-      v-if="selectedCourseId && selectedDate"
-      class="load-btn"
-      @click="loadAttendance"
-    >
-      Load Students
-    </button>
-
-    <!-- Student List -->
-    <div v-if="attendanceLoaded && studentsInCourse.length > 0" class="student-list">
-      <h2>��‍🎓 Mark Attendance</h2>
-      <table>
-        <thead>
-          <tr>
-            <th>Student Name</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="student in studentsInCourse" :key="student.id">
-            <td>{{ student.name }}</td>
-            <td>
-              <select
-                v-model="attendanceData[student.id]"
-                class="status-select"
-              >
-                <option value="">-- Select --</option>
-                <option value="Present">Present</option>
-                <option value="Absent">Absent</option>
-              </select>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-
-      <button @click="saveAttendance" class="save-btn">Save Attendance</button>
+    <!-- No students message -->
+    <div v-else-if="selectedCourseId && studentsInCourse.length === 0" class="no-students">
+      <p>⚠️ No students enrolled in this course yet.</p>
+      <p>Please assign students to this course first.</p>
     </div>
 
-    <div v-if="attendanceLoaded && studentsInCourse.length === 0" class="no-students">
-      <p>No students enrolled in this course.</p>
-    </div>
-
-    <!-- History -->
+    <!-- Attendance History -->
     <div v-if="attendanceHistory.length > 0" class="history">
-      <h2>🕒 Attendance History</h2>
+      <h2>📋 Recent Attendance Records</h2>
       <table>
         <thead>
           <tr>
@@ -76,14 +98,16 @@
             <th>Course</th>
             <th>Present</th>
             <th>Absent</th>
+            <th>Late</th>
           </tr>
         </thead>
         <tbody>
           <tr v-for="(record, index) in attendanceHistory" :key="index">
             <td>{{ record.date }}</td>
             <td>{{ record.courseName }}</td>
-            <td>{{ record.presentCount }}</td>
-            <td>{{ record.absentCount }}</td>
+            <td class="present-count">{{ record.presentCount }}</td>
+            <td class="absent-count">{{ record.absentCount }}</td>
+            <td class="late-count">{{ record.lateCount }}</td>
           </tr>
         </tbody>
       </table>
@@ -92,184 +116,423 @@
 </template>
 
 <script setup>
-import { ref, computed } from "vue";
-import { useStudentStore } from "../stores/studentStore";
+import { ref, computed, onMounted } from 'vue'
+import { useStudentStore } from '../stores/studentStore'
+import { useNotification } from '../composables/useNotification'
 
-const store = useStudentStore();
+const store = useStudentStore()
+const { showNotification } = useNotification()
 
-const selectedCourseId = ref(null);
-const selectedDate = ref("");
-const attendanceData = ref({});
-const attendanceLoaded = ref(false);
-const attendanceHistory = ref([]);
+const isLoading = ref(false)
+const selectedCourseId = ref('')
+const selectedDate = ref('')
+const attendanceData = ref([])
+const attendanceHistory = ref([])
 
-// Get students enrolled in selected course
+// Get students enrolled in selected course (populated by handleCourseChange)
 const studentsInCourse = computed(() => {
-  if (!selectedCourseId.value) return [];
-  return store.students.filter((s) =>
-    s.courses.includes(selectedCourseId.value)
-  );
-});
+  return attendanceData.value
+})
 
-function loadAttendance() {
-  if (!selectedCourseId.value || !selectedDate.value) {
-    alert("Please select both course and date");
-    return;
-  }
-  attendanceData.value = {};
-  studentsInCourse.value.forEach((student) => {
-    attendanceData.value[student.id] = "";
-  });
-  attendanceLoaded.value = true;
+// Check if any student has a status selected
+const hasAnyStatus = computed(() => {
+  return attendanceData.value.some(item => item.status !== null)
+})
+
+// Get stage name from stage_id
+const getStudentStage = (stageId) => {
+  const stage = store.stages.find(s => s.id === stageId)
+  return stage ? stage.name : 'Unknown'
 }
 
-function saveAttendance() {
-  if (!selectedCourseId.value || !selectedDate.value) return;
+// Get course name from course_id
+const getCourseName = (courseId) => {
+  const course = store.courses.find(c => c.id === courseId)
+  return course ? course.name : 'Unknown'
+}
 
-  // Create attendance records
-  const records = [];
-  let presentCount = 0;
-  let absentCount = 0;
-
-  studentsInCourse.value.forEach((student) => {
-    const status = attendanceData.value[student.id];
-    if (status) {
-      records.push({
-        student_id: student.id,
-        course_id: selectedCourseId.value,
-        date: selectedDate.value,
-        status: status,
-      });
-      if (status === "Present") presentCount++;
-      if (status === "Absent") absentCount++;
+// Handle course selection
+const handleCourseChange = async () => {
+  attendanceData.value = []
+  selectedDate.value = ''
+  
+  if (!selectedCourseId.value) return
+  
+  // Fetch enrollments for all students to populate the list
+  isLoading.value = true
+  try {
+    const enrolled = []
+    
+    // Fetch enrollments for each student and check if they have this course
+    for (const student of store.students) {
+      await store.fetchStudentEnrollments(student.id)
+      
+      // Get their enrollments
+      const enrollments = store.studentEnrollments[student.id] || []
+      
+      // Check if they're enrolled in the selected course
+      const hasThisCourse = enrollments.find(
+        enrollment => enrollment.course_id === selectedCourseId.value
+      )
+      
+      if (hasThisCourse) {
+        enrolled.push({
+          studentId: student.id,
+          studentName: student.name,
+          stageName: getStudentStage(student.stage_id),
+          enrollmentId: hasThisCourse.id,
+          status: null // null, 'Present', 'Absent', 'Late'
+        })
+      }
     }
-  });
+    
+    // Set attendance data with the enrolled students
+    attendanceData.value = enrolled
+    
+    if (enrolled.length === 0) {
+      showNotification('No students enrolled in this course', 'info')
+    }
+  } catch (error) {
+    showNotification('Failed to load enrollments: ' + error.message, 'error')
+  } finally {
+    isLoading.value = false
+  }
+}
 
-  if (records.length === 0) {
-    alert("Please mark attendance for at least one student");
-    return;
+// Set attendance status for a student
+const setStatus = (studentId, status) => {
+  const item = attendanceData.value.find(a => a.studentId === studentId)
+  if (item) {
+    item.status = status
+  }
+}
+
+// Mark all students as present
+const markAllPresent = () => {
+  attendanceData.value.forEach(item => {
+    item.status = 'Present'
+  })
+  showNotification('All students marked as present', 'success')
+}
+
+// Save attendance to database
+const saveAttendance = async () => {
+  if (!selectedDate.value) {
+    showNotification('Please select a date', 'error')
+    return
   }
 
-  // Save to store
-  store.saveAttendanceRecord(records);
+  // Filter only students with a status selected
+  const recordsToSave = attendanceData.value.filter(item => item.status !== null)
 
-  // Add to history
-  const courseName = store.courses.find(
-    (c) => c.id === selectedCourseId.value
-  )?.name || "Unknown";
+  if (recordsToSave.length === 0) {
+    showNotification('Please mark attendance for at least one student', 'error')
+    return
+  }
 
-  attendanceHistory.value.push({
-    date: selectedDate.value,
-    courseName: courseName,
-    presentCount,
-    absentCount,
-  });
+  try {
+    isLoading.value = true
 
-  alert("✅ Attendance saved successfully!");
-  attendanceLoaded.value = false;
-  attendanceData.value = {};
-  selectedCourseId.value = null;
-  selectedDate.value = "";
+    // Prepare bulk attendance records
+    const bulkRecords = recordsToSave.map(item => ({
+      studentId: item.studentId,
+      enrollmentId: item.enrollmentId,
+      date: selectedDate.value,
+      status: item.status,
+      notes: ''
+    }))
+
+    // Save using bulk method
+    await store.recordBulkAttendance(bulkRecords)
+
+    // Add to history
+    const presentCount = recordsToSave.filter(r => r.status === 'Present').length
+    const absentCount = recordsToSave.filter(r => r.status === 'Absent').length
+    const lateCount = recordsToSave.filter(r => r.status === 'Late').length
+
+    attendanceHistory.value.unshift({
+      date: selectedDate.value,
+      courseName: getCourseName(selectedCourseId.value),
+      presentCount,
+      absentCount,
+      lateCount
+    })
+
+    showNotification(`Attendance saved for ${recordsToSave.length} students`, 'success')
+
+    // Reset for next entry
+    attendanceData.value.forEach(item => {
+      item.status = null
+    })
+    selectedDate.value = ''
+
+  } catch (error) {
+    showNotification('Failed to save attendance: ' + error.message, 'error')
+  } finally {
+    isLoading.value = false
+  }
 }
+
+onMounted(async () => {
+  isLoading.value = true
+  try {
+    await store.fetchAllStudents()
+    await store.fetchAllCourses()
+    await store.fetchAllStages()
+  } catch (error) {
+    showNotification('Failed to load data: ' + error.message, 'error')
+  } finally {
+    isLoading.value = false
+  }
+})
 </script>
 
 <style scoped>
 .attendance-page {
+  max-width: 1200px;
+  margin: 0 auto;
   padding: 20px;
-  max-width: 900px;
-  margin: auto;
+}
+
+h1 {
+  margin-bottom: 30px;
+  color: #2c3e50;
+}
+
+h2 {
+  margin: 25px 0 15px;
+  color: #34495e;
+  font-size: 1.3em;
+}
+
+.loading {
+  text-align: center;
+  padding: 40px;
+  font-size: 1.2em;
+  color: #7f8c8d;
 }
 
 .form-group {
   margin-bottom: 20px;
 }
 
-label {
+.form-group label {
   display: block;
-  font-weight: bold;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: #2c3e50;
 }
 
-select,
-input[type="date"] {
+.form-group select,
+.form-group input {
   width: 100%;
-  padding: 8px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-}
-
-.load-btn {
-  background-color: #2f80ed;
-  color: white;
-  border: none;
-  padding: 10px 16px;
-  border-radius: 6px;
-  cursor: pointer;
-  margin-bottom: 20px;
-  font-weight: bold;
-  transition: 0.3s;
-}
-
-.load-btn:hover {
-  background-color: #2563be;
-}
-
-.student-list {
-  margin-top: 20px;
-}
-
-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-bottom: 15px;
-  background: white;
-}
-
-th,
-td {
-  border: 1px solid #ddd;
+  max-width: 400px;
   padding: 10px;
-  text-align: left;
+  font-size: 1em;
+  border: 2px solid #ddd;
+  border-radius: 5px;
+  transition: border-color 0.3s;
 }
 
-th {
-  background: #f0f0f0;
-  font-weight: bold;
+.form-group select:focus,
+.form-group input:focus {
+  outline: none;
+  border-color: #3498db;
 }
 
-.status-select {
-  padding: 5px;
-  border-radius: 4px;
-  border: 1px solid #ccc;
-}
-
-.save-btn {
-  background-color: #27ae60;
-  color: white;
-  border: none;
-  padding: 10px 16px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-weight: bold;
-  transition: 0.3s;
-}
-
-.save-btn:hover {
-  background-color: #1e8449;
+.course-students {
+  margin-top: 30px;
 }
 
 .no-students {
   background: #fff3cd;
-  padding: 15px;
-  border-radius: 6px;
+  border: 1px solid #ffc107;
+  border-radius: 5px;
+  padding: 20px;
   margin-top: 20px;
+  text-align: center;
+}
+
+.no-students p {
+  margin: 5px 0;
   color: #856404;
 }
 
-.history {
-  margin-top: 30px;
-  background: #f8f9fa;
-  padding: 15px;
+.attendance-table-container {
+  margin-top: 20px;
+}
+
+.attendance-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 20px;
+  background: white;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
   border-radius: 8px;
+  overflow: hidden;
+}
+
+.attendance-table thead {
+  background: #3498db;
+  color: white;
+}
+
+.attendance-table th,
+.attendance-table td {
+  padding: 12px 15px;
+  text-align: left;
+  border-bottom: 1px solid #ddd;
+}
+
+.attendance-table tbody tr:hover {
+  background: #f8f9fa;
+}
+
+.status-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.status-btn {
+  padding: 6px 12px;
+  border: 2px solid transparent;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 0.9em;
+  font-weight: 500;
+  transition: all 0.2s;
+  background: #f8f9fa;
+  color: #495057;
+}
+
+.status-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.status-btn.present {
+  border-color: #e0e0e0;
+}
+
+.status-btn.present.active {
+  background: #27ae60;
+  color: white;
+  border-color: #27ae60;
+}
+
+.status-btn.absent {
+  border-color: #e0e0e0;
+}
+
+.status-btn.absent.active {
+  background: #e74c3c;
+  color: white;
+  border-color: #e74c3c;
+}
+
+.status-btn.late {
+  border-color: #e0e0e0;
+}
+
+.status-btn.late.active {
+  background: #f39c12;
+  color: white;
+  border-color: #f39c12;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 15px;
+  margin-top: 20px;
+  flex-wrap: wrap;
+}
+
+.btn {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 1em;
+  font-weight: 600;
+  transition: all 0.3s;
+}
+
+.btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.mark-all {
+  background: #3498db;
+  color: white;
+}
+
+.mark-all:hover {
+  background: #2980b9;
+}
+
+.save-btn {
+  background: #27ae60;
+  color: white;
+}
+
+.save-btn:hover {
+  background: #229954;
+}
+
+.save-btn:disabled {
+  background: #95a5a6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.save-btn:disabled:hover {
+  box-shadow: none;
+}
+
+.history {
+  margin-top: 40px;
+  padding-top: 30px;
+  border-top: 2px solid #ecf0f1;
+}
+
+.history table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.history thead {
+  background: #34495e;
+  color: white;
+}
+
+.history th,
+.history td {
+  padding: 12px 15px;
+  text-align: left;
+  border-bottom: 1px solid #ddd;
+}
+
+.history tbody tr:hover {
+  background: #f8f9fa;
+}
+
+.present-count {
+  color: #27ae60;
+  font-weight: 600;
+}
+
+.absent-count {
+  color: #e74c3c;
+  font-weight: 600;
+}
+
+.late-count {
+  color: #f39c12;
+  font-weight: 600;
 }
 </style>

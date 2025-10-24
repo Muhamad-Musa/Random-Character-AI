@@ -17,7 +17,7 @@
       <label>
         Stage *
         <select v-model.number="form.stage_id" required>
-          <option :value="null">-- Select stage --</option>
+          <option value="">-- Select stage --</option>
           <option v-for="s in store.stages" :key="s.id" :value="s.id">{{ s.name }}</option>
         </select>
       </label>
@@ -49,7 +49,7 @@ const store = useStudentStore()
 const form = reactive({
   name: '',
   age: null,
-  stage_id: null,
+  stage_id: '',
   email: '',
 })
 
@@ -101,7 +101,7 @@ function onSubmit() {
     // reset form
     form.name = ''
     form.age = null
-    form.stage_id = null
+    form.stage_id = ''
     form.email = ''
   } catch (err) {
     errorMessage.value = 'Failed to create student'
@@ -111,7 +111,7 @@ function onSubmit() {
 function onReset() {
   form.name = ''
   form.age = null
-  form.stage_id = null
+  form.stage_id = ''
   form.email = ''
   errors.name = ''
   errors.email = ''
