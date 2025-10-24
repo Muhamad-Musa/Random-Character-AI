@@ -20,15 +20,15 @@ export const useStudentStore = defineStore("student", () => {
 
   // Getters
   const getStudentById = (id) => {
-    return students.value.find((s) => s.id === String(id));
+    return students.value.find((s) => String(s.id) === String(id));
   };
 
   const getStageById = (id) => {
-    return stages.value.find((s) => s.id === String(id));
+    return stages.value.find((s) => String(s.id) === String(id));
   };
 
   const getCourseById = (id) => {
-    return courses.value.find((c) => c.id === String(id));
+    return courses.value.find((c) => String(c.id) === String(id));
   };
 
   // Actions - Students
@@ -65,7 +65,7 @@ export const useStudentStore = defineStore("student", () => {
     error.value = null;
     try {
       const updated = await studentService.updateStudent(id, updates);
-      const index = students.value.findIndex((s) => s.id === id);
+      const index = students.value.findIndex((s) => String(s.id) === String(id));
       if (index > -1) {
         students.value[index] = { ...students.value[index], ...updates };
       }
@@ -83,7 +83,7 @@ export const useStudentStore = defineStore("student", () => {
     error.value = null;
     try {
       await studentService.deleteStudent(id);
-      students.value = students.value.filter((s) => s.id !== id);
+      students.value = students.value.filter((s) => String(s.id) !== String(id));
     } catch (err) {
       error.value = err.message;
       throw err;

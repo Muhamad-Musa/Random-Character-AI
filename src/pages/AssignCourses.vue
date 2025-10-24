@@ -5,7 +5,7 @@
     <!-- Select student -->
     <div class="form-group">
       <label for="student">Select Student:</label>
-      <select v-model.number="selectedStudentId" id="student">
+      <select v-model="selectedStudentId" id="student">
         <option value="">-- Choose a student --</option>
         <option
           v-for="student in store.students"
@@ -64,7 +64,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, watch } from "vue";
 import { useStudentStore } from "../stores/studentStore";
 import { useNotification } from "../composables/useNotification";
 
@@ -106,10 +106,27 @@ async function assignCourses() {
     await store.assignCourses(selectedStudentId.value, selectedCourses.value);
     notifySuccess("✅ Courses assigned successfully!");
     selectedCourses.value = [];
+    // refresh enrollments for this student to keep UI in sync
+    try {
+      await store.fetchStudentEnrollments(selectedStudentId.value);
+    } catch (err) {
+      notifyError("Warning: failed to refresh enrollments: " + err.message);
+    }
   } catch (err) {
     notifyError("Failed to assign courses: " + err.message);
   }
 }
+
+// When selected student changes, clear any selected courses and fetch their enrollments
+watch(selectedStudentId, async (newId) => {
+  selectedCourses.value = [];
+  if (!newId) return;
+  try {
+    await store.fetchStudentEnrollments(String(newId));
+  } catch (err) {
+    notifyError("Failed to load student enrollments: " + err.message);
+  }
+});
 </script>
 
 <style scoped>
