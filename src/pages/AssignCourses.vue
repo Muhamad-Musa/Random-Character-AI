@@ -96,7 +96,20 @@ const selectedStudent = computed(() =>
 
 const assignedCourses = computed(() => {
   if (!selectedStudentId.value) return [];
-  return store.getStudentCourses(selectedStudentId.value);
+  // store.getStudentCourses returns enrollment objects like:
+  // { id: enrollmentId, course_id, course_name, enrolled_date }
+  // Map them to objects with `id` and `name` so the template can render
+  // course.name as expected. Prefer the full course object when available
+  const enrollments = store.getStudentCourses(selectedStudentId.value) || [];
+  return enrollments.map((enrollment) => {
+    // try to find a course in store.courses for richer data
+    const courseFromStore = store.getCourseById(enrollment.course_id);
+    if (courseFromStore) {
+      return { id: courseFromStore.id, name: courseFromStore.name };
+    }
+    // fallback to the enrollment's stored course_name
+    return { id: enrollment.course_id || enrollment.id, name: enrollment.course_name || 'Unknown Course' };
+  });
 });
 
 async function assignCourses() {
