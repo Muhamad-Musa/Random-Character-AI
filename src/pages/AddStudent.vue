@@ -16,7 +16,7 @@
 
       <label>
         Stage *
-        <select v-model.number="form.stage_id" required>
+    <select v-model="form.stage_id" required>
           <option value="">-- Select stage --</option>
           <option v-for="s in store.stages" :key="s.id" :value="s.id">{{ s.name }}</option>
         </select>
@@ -85,14 +85,14 @@ function validate() {
   return ok
 }
 
-function onSubmit() {
+async function onSubmit() {
   errorMessage.value = ''
   if (!validate()) return
   try {
-    const student = store.addStudent({
+    const student = await store.addStudent({
       name: form.name.trim(),
       age: Number(form.age),
-      stage_id: form.stage_id,
+      stage_id: String(form.stage_id),
       email: form.email.trim(),
     })
     saved.value = true
@@ -104,7 +104,7 @@ function onSubmit() {
     form.stage_id = ''
     form.email = ''
   } catch (err) {
-    errorMessage.value = 'Failed to create student'
+    errorMessage.value = err?.message || 'Failed to create student'
   }
 }
 
