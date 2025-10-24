@@ -4,12 +4,12 @@ A comprehensive Vue 3 web application for managing students, classes, courses, a
 
 ## Features
 
-Dashboard: Overview with total students and classes, plus recent 5 students.
-Student Management: View, add, edit, and delete students with search and pagination.
-Student Details: Display individual info, assigned courses, and quick actions.
-Class Management: Add and manage classes; view students per class.
-Course Assignment: Assign/unassign courses to students via checkboxes.
-Attendance Tracking: Mark and view attendance by course and date.
+- **Dashboard**: Overview with total students and classes, plus recent 5 students.
+- **Student Management**: View, add, edit, and delete students with search and pagination.
+- **Student Details**: Display individual info, assigned courses, and quick actions.
+- **Class Management**: Add and manage classes; view students per class.
+- **Course Assignment**: Assign/unassign courses to students via checkboxes.
+- **Attendance Tracking**: Mark and view attendance by course and date.
 
 All features include form validation, success/error messages, and intuitive navigation.
 
